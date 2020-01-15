@@ -7,9 +7,9 @@ import sys
 
 # TODO: Team + Playerlists are done. Now get MMR from rlstats.com
 
+# Get directory path and chromedriver.exe
 dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver.exe'
-
 driver = webdriver.Chrome(executable_path=cd_path)
 
 
@@ -38,13 +38,14 @@ class Player:
         self.mmr_3v3s = []
 
 
+# Function to get team and player information from toornament.com
+# Returns teams (an array of <Team> objects, which contain corresponding player information)
 def scrape_teams(tournament_url):
     # Initialize variables
     teams = []
 
     # Open URL to Teams-Overview
     main_url_toor = "https://www.toornament.com"
-    #tournament_url = main_url_toor + "/en_US/tournaments/2859636902129573888"
     participants_url = tournament_url + "/participants/"
     driver.get(participants_url)
 
@@ -55,46 +56,42 @@ def scrape_teams(tournament_url):
         team_name=div.find('div', attrs={'class':'name'})
         team_url=div.find('a', href=True)['href']
 
-        teams.append(Team(team_name.text, team_url))
+        teams.append(Team(team_name.text, team_url))  # adds Team object to the return variable
 
-    nr_teams = len(teams) # Number of teams in tournament (int)
-
-    teams_test = [teams[1], teams[2]]  # For test pruposes only use two teams
+    teams_test = teams  # [teams[1], teams[2]]  # TODO: change teams_test to teams when done!
 
     tnr = 0  # Team-Nr used for indexing
     for team in teams_test:  # TODO: change teams_test to teams when done!
-        #print("team.name="+str(team.name))
-
         # Open Team-Info-URL
         team_info_url = main_url_toor + team.url + "info"
-        #print("team_info_url="+team_info_url)
         driver.get(team_info_url)
 
         # Extract Players data
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
 
-        largesoup = soup.findAll('div', attrs={'class':'grid-flex vertical spacing-tiny'})
-        smallsoup = list(filter(None, largesoup))
+        largesoup = soup.findAll('div', attrs={'class':'grid-flex vertical spacing-tiny'})  # finds player-data
+        smallsoup = list(filter(None, largesoup))  # throws out None-Objects
 
         pnr = 0  # Player-Nr used for indexing
         for div in smallsoup:
             # Problem: 'grid-flex vertical spacing-tiny' tag is not exclusively used for player data! Sometimes = 'None'
             if div.find('div', attrs={'class': 'text secondary small steam_player_id'}) is not None:  # Workaround
-                # Player found! Save it!
+                # Player found! Get relevant data and save it!
                 name = div.find('div', attrs={'class':'text bold'}).text
                 steamid = div.find('div', attrs={'class':'text secondary small steam_player_id'}).text
                 xboxgt = div.find('div', attrs={'class': 'text secondary small xbox_live_player_id'}).text
                 psnid = div.find('div', attrs={'class': 'text secondary small psn_player_id'}).text
                 nintendoid = div.find('div', attrs={'class': 'text secondary small nintendo_network_player_id'}).text
 
-                # Delete spaces, line breaks and other garbage and append to list
+                # Delete spaces, line breaks and other garbage
                 name = name.replace('\n', ' ').replace('\r', '').replace(" ", "")
                 steamid = steamid.replace(' Steam ID (ausschließlich Steam64Id):','').replace('\n', ' ').replace('\r', '').replace(" ", "")
                 xboxgt = xboxgt.replace(' Xbox Live Gamertag:','').replace('\n', ' ').replace('\r', '').replace(" ", "")
                 psnid = psnid.replace(' PSN ID:', '').replace('\n', ' ').replace('\r','').replace(" ", "")
                 nintendoid = nintendoid.replace(' Nintendo Network ID:', '').replace('\n', ' ').replace('\r', '').replace(" ", "")
 
+                # Add this player to this team's players-list
                 team.players.append(Player(name, team, steamid, xboxgt, psnid, nintendoid))
 
                 pnr = pnr + 1
@@ -103,6 +100,7 @@ def scrape_teams(tournament_url):
     return teams_test  # TODO: change teams_test to teams when done!
 
 
+# Returns player-stats found on rl-trackernetwork for a list of teams
 def scrape_stats(teams):
     trackernet_url = "https://rocketleague.tracker.network"
     for the_team in teams:
@@ -110,17 +108,18 @@ def scrape_stats(teams):
             best_id_type = '-'
             player_trn_url = '-'
 
+            # If Steam-ID is available for this player, this should be used. If not, use another ID available.
             if len(the_player.steam_id) > 4:
-                player_trn_url = trackernet_url + "/profile/steam/" + the_player.steam_id
+                player_trn_url = trackernet_url + "/profile/mmr/steam/" + the_player.steam_id
                 best_id_type = "steam"
             elif the_player.xbox_id != '-' and the_player.xbox_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/xbox/" + the_player.xbox_id
+                player_trn_url = trackernet_url + "/profile/mmr/xbox/" + the_player.xbox_id
                 best_id_type = "xbox"
             elif the_player.psn_id != '-' and the_player.psn_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/ps/" + the_player.psn_id
+                player_trn_url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
                 best_id_type = "psn"
             elif the_player.psn_id != '-' and the_player.psn_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/ps/" + the_player.psn_id
+                player_trn_url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
                 best_id_type = "nintendo"
             else:
                 print("Player " + the_player.name + " in Team " + the_team.name + " has no valid ID!")
@@ -133,11 +132,23 @@ def scrape_stats(teams):
                 content = driver.page_source
                 soup = BeautifulSoup(content, features="html.parser")
 
-                # TODO: Get Player MMR and Stats
+                # TODO: Make getting down to the final soup shorter...
+                soup = soup.find('div', attrs={'class': 'trn-profile'}).find('div', attrs={'class': 'profile-main'})
+                # TODO: https://rocketleague.tracker.network/profile/mmr/xbox/EviRaXEN ist 404 -> soup = NoneType
+                soup = soup.find('div', attrs={'class': 'content'}).find('div', attrs={'class': 'row'})
+                soup = soup.find('div', attrs={'class': 'col-md-3'}).find('div', attrs={'class': 'card card-list'})
 
-                # TODO: Save MMR and Stats in Player-Object
+                the_player.mmr_1v1 = soup.find('a', attrs={'data-id': '10'}).find('span', attrs={'class': 'badge'}).text
+                the_player.mmr_2v2 = soup.find('a', attrs={'data-id': '11'}).find('span', attrs={'class': 'badge'}).text
+                the_player.mmr_3v3s = soup.find('a', attrs={'data-id': '12'}).find('span', attrs={'class': 'badge'}).text
+                the_player.mmr_3v3 = soup.find('a', attrs={'data-id': '13'}).find('span', attrs={'class': 'badge'}).text
 
-                # TODO: return Teams-Object with all changes in players
+            else:
+                the_player.mmr_1v1 = "-1"
+                the_player.mmr_2v2 = "-1"
+                the_player.mmr_3v3s = "-1"
+                the_player.mmr_3v3 = "-1"
+    return teams
 
 
 #def export_to_csv(teams_to_export):
@@ -145,16 +156,31 @@ def scrape_stats(teams):
 
 
 # Test Function
-allTeams = scrape_teams("https://www.toornament.com/en_US/tournaments/2859636902129573888")
+teams_toor = scrape_teams("https://www.toornament.com/en_US/tournaments/2859636902129573888")
+# for theTeam in allTeams:
+#     print("Team-Name = " + theTeam.name)
+#     for thePlayer in theTeam.players:
+#         print(" Player-Name = " + thePlayer.name)
+#         print(" Player-SteamID = " + thePlayer.steam_id)
+#         print(" Player-xboxID = " + thePlayer.xbox_id)
+#         print(" Player-psnID = " + thePlayer.psn_id)
+#         print(" Player-NintendoID = " + thePlayer.nintendo_id)
+#     print()
 
-for theTeam in allTeams:
+# allTeams = []
+# allTeams.append(Team("Test Team", "www.testteam_notreal.de"))
+# allTeams[0].players.append(Player("Scrub Killa", allTeams[0], "76561198089298636", "-", "-", "-"))
+
+teams_final = scrape_stats(teams_toor)
+
+for theTeam in teams_final:
     print("Team-Name = " + theTeam.name)
     for thePlayer in theTeam.players:
-        print(" Player-Name = " + thePlayer.name)
-        print(" Player-SteamID = " + thePlayer.steam_id)
-        print(" Player-xboxID = " + thePlayer.xbox_id)
-        print(" Player-psnID = " + thePlayer.psn_id)
-        print(" Player-NintendoID = " + thePlayer.nintendo_id)
+        print("   Player-Name = " + thePlayer.name)
+        print("      MMR_1v1 = " + thePlayer.mmr_1v1)
+        print("      MMR_2v2 = " + thePlayer.mmr_2v2)
+        print("      MMR_3v3s = " + thePlayer.mmr_3v3s)
+        print("      MMR_3v3 = " + thePlayer.mmr_3v3)
     print()
 
 #export_to_csv(allTeams)
