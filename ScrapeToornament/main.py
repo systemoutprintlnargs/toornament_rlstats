@@ -1,9 +1,10 @@
 from scrapetoor import *
 
 # Input data
-toornament_url = "https://www.toornament.com/en_US/tournaments/2859636902129573888"
-save_directory = "C:/Users/Oliver/Documents/Projects/toornament_rlstats/CSV_Output"
-csv_file_name = "test_output.csv"
+toornament_url = "https://www.toornament.com/en_US/tournaments/2859636902129573888/"
+dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+save_directory = dir_parent_path.replace('\\', '/') + '/CSV_Output/'
+csv_file_name = "main_output.csv"
 
 # Scrape teams from toornament.com
 teams_toor = scrape_teams(toornament_url)

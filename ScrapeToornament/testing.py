@@ -83,7 +83,8 @@ if test_csv_export or test_full:
     else:
         save_teams = testTeams
 
-    save_directory = "C:/Users/Oliver/Documents/Projects/toornament_rlstats/CSV_Output/"
+    dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    save_directory = dir_parent_path.replace('\\', '/') + '/CSV_Output/'
     csv_file_name = "test_output.csv"
 
     save_success = export_teams_to_csv(save_teams, csv_file_name, save_directory)

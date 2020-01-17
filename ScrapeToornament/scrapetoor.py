@@ -50,14 +50,14 @@ def scrape_teams(tournament_url):
 
     # Open URL to Teams-Overview
     main_url_toor = "https://www.toornament.com"
-    participants_url = tournament_url + "/participants/"
+    participants_url = tournament_url + "participants/"
 
     # Extract data about Teams from website
     # TODO: Better to check for 404...
     page = 0
-    while page > -1:
+    while True:
         page = page + 1
-        print("   Scraping page" + str(page) + " of participants website.")
+        print("   Scraping page " + str(page) + " of teams website.")
         participants_page_url = participants_url + "?page=" + str(page)
         driver.get(participants_page_url)
         content = driver.page_source
@@ -67,26 +67,23 @@ def scrape_teams(tournament_url):
 
         for div in soup.findAll('div', attrs={'class': 'size-1-of-4'}):
             team_name = div.find('div', attrs={'class': 'name'})
-            team_url = div.find('a', href=True)['href']
+            team_url = main_url_toor + div.find('a', href=True)['href'] + "info"
 
             teams.append(Team(team_name.text, team_url))  # adds Team object to the return variable
 
         if errorsoup is not None:
             print("   Page" + str(page) + " was the last page.")
-            page = -1
             break
-
-    # teams_test = [teams[1], teams[2]]  # TODO: change teams_test to teams when done!
-    teams_test = teams  # TODO: change teams_test to teams when done!
 
     print("   Scraping players in teams...")
     tnr = 0  # Team-Nr used for indexing
-    for team in teams_test:  # TODO: change teams_test to teams when done!
+    for team in teams:
         print("      Scraping players in team " + team.name + " with team-nr " + str(tnr))
 
         # Open Team-Info-URL
-        team_info_url = main_url_toor + team.url + "info"
-        driver.get(team_info_url)
+        #team_info_url = main_url_toor + team.url + "info"
+        #driver.get(team_info_url)
+        driver.get(team.url)
 
         # Extract Players data
         content = driver.page_source
@@ -124,7 +121,7 @@ def scrape_teams(tournament_url):
         tnr = tnr + 1
     print("All teams successfully scraped for players.")
     print("\n")
-    return teams_test  # TODO: change teams_test to teams when done!
+    return teams
 
 
 # Returns player-stats found on rl-trackernetwork for a list of teams
@@ -162,7 +159,6 @@ def scrape_stats(teams):
                 content = driver.page_source
                 soup = BeautifulSoup(content, features="html.parser")
 
-                # TODO: Make getting down to the final soup shorter...
                 errorsoup = soup.find('div', attrs={'id': 'header'})
                 if errorsoup is not None:
                     errorsoup = errorsoup.find('h1').text
@@ -174,6 +170,7 @@ def scrape_stats(teams):
 
                         print("Error for " + the_player.name + " in " + the_team.name + ". Can't access TRN.")
                 else:
+                    # TODO: Make getting down to the final soup shorter...
                     soup = soup.find('div', attrs={'class': 'trn-profile'}).find('div', attrs={'class': 'profile-main'})
                     soup = soup.find('div', attrs={'class': 'content'}).find('div', attrs={'class': 'row'})
                     soup = soup.find('div', attrs={'class': 'col-md-3'}).find('div', attrs={'class': 'card card-list'})
@@ -228,11 +225,9 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
                 writer.writerow([team.name] + [team.url] + [player.name] + [player.url] +
                                 [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
             except UnicodeEncodeError:
-                print("Export error in player " + player.name + ". Check URL " + player.url)
-                print(team.name + ';' + team.url + ';' + player.name + ';' + player.url + ';' +
-                      player.mmr_1v1 + ';' + player.mmr_2v2 + ';' + player.mmr_3v3s + ';' + player.mmr_3v3)
-                writer.writerow([team.name] + [team.url] + [player.name] + [player.url] +
-                                [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
+                print("Export error in player with URL " + player.url)
+                writer.writerow(['ERROR'] + ['ERROR'] + ['ERROR'] + [player.url] +
+                                ['ERROR'] + ['ERROR'] + ['ERROR'] + ['ERROR'])
     print("Successfully exported to CSV.")
     print("\n")
     return csv_success
