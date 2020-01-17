@@ -1,8 +1,8 @@
 from scrapetoor import *
 
-test_scrape_teams = True
+test_scrape_teams = False
 test_scrape_stats = False
-test_csv_export = False
+test_csv_export = True
 test_scrape_teams_stats = False
 test_full = False
 
@@ -83,7 +83,7 @@ if test_csv_export or test_full:
     else:
         save_teams = testTeams
 
-    save_directory = "C:/Users/pohl/Documents/Git/toornament_rlstats/CSV_Output/"
+    save_directory = "C:/Users/Oliver/Documents/Projects/toornament_rlstats/CSV_Output/"
     csv_file_name = "test_output.csv"
 
     save_success = export_teams_to_csv(save_teams, csv_file_name, save_directory)

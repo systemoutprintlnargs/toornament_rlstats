@@ -1,16 +1,15 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
-import pandas as pd
+# import pandas as pd
 import os
-import sys
-#import time
+# import sys
+# import time
 import csv
-
-# TODO: Team + Playerlists are done. Now get MMR from rlstats.com
 
 # Get directory path and chromedriver.exe
 dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver.exe'
+print(cd_path)
 driver = webdriver.Chrome(executable_path=cd_path)
 
 
@@ -34,6 +33,7 @@ class Player:
         self.psn_id = psn_id
         self.nintendo_id = nintendo_id
 
+        self.url = []
         self.mmr_3v3 = []
         self.mmr_2v2 = []
         self.mmr_1v1 = []
@@ -65,9 +65,9 @@ def scrape_teams(tournament_url):
 
         errorsoup = soup.find('li', attrs={'class': 'arrow next disabled'})
 
-        for div in soup.findAll('div', attrs={'class':'size-1-of-4'}):
-            team_name=div.find('div', attrs={'class':'name'})
-            team_url=div.find('a', href=True)['href']
+        for div in soup.findAll('div', attrs={'class': 'size-1-of-4'}):
+            team_name = div.find('div', attrs={'class': 'name'})
+            team_url = div.find('a', href=True)['href']
 
             teams.append(Team(team_name.text, team_url))  # adds Team object to the return variable
 
@@ -76,7 +76,7 @@ def scrape_teams(tournament_url):
             page = -1
             break
 
-    #teams_test = [teams[1], teams[2]]  # TODO: change teams_test to teams when done!
+    # teams_test = [teams[1], teams[2]]  # TODO: change teams_test to teams when done!
     teams_test = teams  # TODO: change teams_test to teams when done!
 
     print("   Scraping players in teams...")
@@ -92,7 +92,7 @@ def scrape_teams(tournament_url):
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
 
-        largesoup = soup.findAll('div', attrs={'class':'grid-flex vertical spacing-tiny'})  # finds player-data
+        largesoup = soup.findAll('div', attrs={'class': 'grid-flex vertical spacing-tiny'})  # finds player-data
         smallsoup = list(filter(None, largesoup))  # throws out None-Objects
 
         pnr = 0  # Player-Nr used for indexing
@@ -100,18 +100,21 @@ def scrape_teams(tournament_url):
             # Problem: 'grid-flex vertical spacing-tiny' tag is not exclusively used for player data! Sometimes = 'None'
             if div.find('div', attrs={'class': 'text secondary small steam_player_id'}) is not None:  # Workaround
                 # Player found! Get relevant data and save it!
-                name = div.find('div', attrs={'class':'text bold'}).text
-                steamid = div.find('div', attrs={'class':'text secondary small steam_player_id'}).text
+                name = div.find('div', attrs={'class': 'text bold'}).text
+                steamid = div.find('div', attrs={'class': 'text secondary small steam_player_id'}).text
                 xboxgt = div.find('div', attrs={'class': 'text secondary small xbox_live_player_id'}).text
                 psnid = div.find('div', attrs={'class': 'text secondary small psn_player_id'}).text
                 nintendoid = div.find('div', attrs={'class': 'text secondary small nintendo_network_player_id'}).text
 
                 # Delete spaces, line breaks and other garbage
-                name = name.replace('\n', ' ').replace('\r', '').replace(" ", "")
-                steamid = steamid.replace(' Steam ID (ausschließlich Steam64Id):','').replace('\n', ' ').replace('\r', '').replace(" ", "")
-                xboxgt = xboxgt.replace(' Xbox Live Gamertag:','').replace('\n', ' ').replace('\r', '').replace(" ", "")
-                psnid = psnid.replace(' PSN ID:', '').replace('\n', ' ').replace('\r','').replace(" ", "")
-                nintendoid = nintendoid.replace(' Nintendo Network ID:', '').replace('\n', ' ').replace('\r', '').replace(" ", "")
+                name = name.replace('\n', ' ').replace('\r', '').replace(" ", "").replace(";", "-")
+                steamid = steamid.replace(' Steam ID (ausschließlich Steam64Id):', '')\
+                    .replace('\n', ' ').replace('\r', '').replace(" ", "")
+                xboxgt = xboxgt.replace(' Xbox Live Gamertag:', '')\
+                    .replace('\n', ' ').replace('\r', '').replace(" ", "")
+                psnid = psnid.replace(' PSN ID:', '').replace('\n', ' ').replace('\r', '').replace(" ", "")
+                nintendoid = nintendoid.replace(' Nintendo Network ID:', '')\
+                    .replace('\n', ' ').replace('\r', '').replace(" ", "")
 
                 # Add this player to this team's players-list
                 team.players.append(Player(name, team, steamid, xboxgt, psnid, nintendoid))
@@ -132,28 +135,28 @@ def scrape_stats(teams):
         print("   Scraping stats for players in team " + the_team.name + ".")
         for the_player in the_team.players:
             best_id_type = '-'
-            player_trn_url = '-'
+            the_player.url = '-'
 
             # If Steam-ID is available for this player, this should be used. If not, use another ID available.
             if len(the_player.steam_id) > 4:
-                player_trn_url = trackernet_url + "/profile/mmr/steam/" + the_player.steam_id
+                the_player.url = trackernet_url + "/profile/mmr/steam/" + the_player.steam_id
                 best_id_type = "steam"
             elif the_player.xbox_id != '-' and the_player.xbox_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/mmr/xbox/" + the_player.xbox_id
+                the_player.url = trackernet_url + "/profile/mmr/xbox/" + the_player.xbox_id
                 best_id_type = "xbox"
             elif the_player.psn_id != '-' and the_player.psn_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
+                the_player.url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
                 best_id_type = "psn"
             elif the_player.psn_id != '-' and the_player.psn_id != 'n/a':
-                player_trn_url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
+                the_player.url = trackernet_url + "/profile/mmr/ps/" + the_player.psn_id
                 best_id_type = "nintendo"
             else:
                 print("Player " + the_player.name + " in Team " + the_team.name + " has no valid ID!")
 
             if best_id_type != '-':
-                print("      Getting player MMR for " + the_player.name + " with url " + player_trn_url)
+                print("      Getting player MMR for " + the_player.name + " with url " + the_player.url)
                 # Open TRN-Player-Website
-                driver.get(player_trn_url)
+                driver.get(the_player.url)
 
                 # Extract Players data
                 content = driver.page_source
@@ -169,26 +172,30 @@ def scrape_stats(teams):
                         the_player.mmr_3v3s = str(-2)
                         the_player.mmr_3v3 = str(-2)
 
-                        print("Error for player " + the_player.name + " in team " + the_team.name + ". Can't access TRN.")
+                        print("Error for " + the_player.name + " in " + the_team.name + ". Can't access TRN.")
                 else:
                     soup = soup.find('div', attrs={'class': 'trn-profile'}).find('div', attrs={'class': 'profile-main'})
                     soup = soup.find('div', attrs={'class': 'content'}).find('div', attrs={'class': 'row'})
                     soup = soup.find('div', attrs={'class': 'col-md-3'}).find('div', attrs={'class': 'card card-list'})
 
                     try:
-                        the_player.mmr_1v1 = soup.find('a', attrs={'data-id': '10'}).find('span', attrs={'class': 'badge'}).text
+                        the_player.mmr_1v1 = soup.find('a', attrs={'data-id': '10'})\
+                                                    .find('span', attrs={'class': 'badge'}).text
                     except AttributeError:
                         the_player.mmr_1v1 = -3
                     try:
-                        the_player.mmr_2v2 = soup.find('a', attrs={'data-id': '11'}).find('span', attrs={'class': 'badge'}).text
+                        the_player.mmr_2v2 = soup.find('a', attrs={'data-id': '11'})\
+                                                    .find('span', attrs={'class': 'badge'}).text
                     except AttributeError:
                         the_player.mmr_2v2 = -3
                     try:
-                        the_player.mmr_3v3s = soup.find('a', attrs={'data-id': '12'}).find('span', attrs={'class': 'badge'}).text
+                        the_player.mmr_3v3s = soup.find('a', attrs={'data-id': '12'})\
+                                                    .find('span', attrs={'class': 'badge'}).text
                     except AttributeError:
                         the_player.mmr_3v3s = -3
                     try:
-                        the_player.mmr_3v3 = soup.find('a', attrs={'data-id': '13'}).find('span', attrs={'class': 'badge'}).text
+                        the_player.mmr_3v3 = soup.find('a', attrs={'data-id': '13'})\
+                                                    .find('span', attrs={'class': 'badge'}).text
                     except AttributeError:
                         the_player.mmr_3v3 = -3
 
@@ -203,7 +210,7 @@ def scrape_stats(teams):
 
 
 # TODO: use panda to re-format data
-#def panda_format(teams):
+# def panda_format(teams):
 
 # TODO: format teams-object into csv-file and export
 def export_teams_to_csv(all_teams, csv_file_name, save_directory):
@@ -213,15 +220,23 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
     writer = csv.writer(
         open(save_directory + csv_file_name, 'w', newline=''), delimiter=';')
 
-    writer.writerow(['Team'] + ["Player"] + ["MMR 1v1"] + ["MMR 2v2"] + ["MMR 3v3s"] + ["MMR 3v3"])
+    writer.writerow(['Team'] + ["Team-URL"] + ["Player"] + ["TRN-URL"] + ["MMR 1v1"] + ["MMR 2v2"] + ["MMR 3v3s"] +
+                    ["MMR 3v3"])
     for team in all_teams:
         for player in team.players:
-            writer.writerow([team.name] + [player.name] + [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] +
-                            [player.mmr_3v3])
+            try:
+                writer.writerow([team.name] + [team.url] + [player.name] + [player.url] +
+                                [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
+            except UnicodeEncodeError:
+                print("Export error in player " + player.name + ". Check URL " + player.url)
+                print(team.name + ';' + team.url + ';' + player.name + ';' + player.url + ';' +
+                      player.mmr_1v1 + ';' + player.mmr_2v2 + ';' + player.mmr_3v3s + ';' + player.mmr_3v3)
+                writer.writerow([team.name] + [team.url] + [player.name] + [player.url] +
+                                [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
     print("Successfully exported to CSV.")
     print("\n")
     return csv_success
 
 
-#def import_teams_from_csv(csv_file_path)
+# def import_teams_from_csv(csv_file_path)
 # TODO: Add function that can re-create teams-list with players from CSV-file so web-scraping not necessary every time

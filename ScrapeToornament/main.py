@@ -2,7 +2,7 @@ from scrapetoor import *
 
 # Input data
 toornament_url = "https://www.toornament.com/en_US/tournaments/2859636902129573888"
-save_directory = "C:/Users/pohl/Documents/Git/toornament_rlstats/CSV_Output/"
+save_directory = "C:/Users/Oliver/Documents/Projects/toornament_rlstats/CSV_Output"
 csv_file_name = "test_output.csv"
 
 # Scrape teams from toornament.com
