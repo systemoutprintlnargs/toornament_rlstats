@@ -2,9 +2,9 @@ from scrapetoor import *
 
 test_scrape_teams = False
 test_scrape_stats = False
-test_csv_export = True
+test_csv_export = False
 test_scrape_teams_stats = False
-test_full = False
+test_full = True
 
 # Create 2 test teams with players
 testTeams = []
@@ -22,21 +22,25 @@ testTeams[1].players.append(Player("Salzberg", testTeams[0], "76561198097929350"
 
 if test_scrape_teams or test_scrape_teams_stats or test_full:
     # Test scrape_teams()
-    teams_toor = scrape_teams("https://www.toornament.com/en_US/tournaments/2859636902129573888")
+    tournament_url = "https://www.toornament.com/en_US/tournaments/2859636902129573888/"
+    teams_toor = scrape_teams_from_participants_website(tournament_url + "participants/")
+    print("scrape_teams_from_participants_website() successful.")
+    for the_team in teams_toor:
+        the_team.scrape_players()
+    print("Team.scrape_players() successful. Check output:\n")
 
-    print("scrape_teams() successful. Check output:\n")
-
-    for theTeam in teams_toor:
-        print("Team-Name = " + theTeam.name)
-        for thePlayer in theTeam.players:
-            print(" Player-Name = " + thePlayer.name)
-            print(" Player-SteamID = " + thePlayer.steam_id)
-            print(" Player-xboxID = " + thePlayer.xbox_id)
-            print(" Player-psnID = " + thePlayer.psn_id)
-            print(" Player-NintendoID = " + thePlayer.nintendo_id)
+    for the_team in teams_toor:
+        print("Team-Name = " + the_team.name)
+        print("Team-URL = " + the_team.url)
+        for the_player in the_team.players:
+            print(" Player-Name = " + the_player.name)
+            print(" Player-SteamID = " + the_player.steam_id)
+            print(" Player-xboxID = " + the_player.xbox_id)
+            print(" Player-psnID = " + the_player.psn_id)
+            print(" Player-NintendoID = " + the_player.nintendo_id)
         print()
 else:
-    print("Skipping test of scrape_teams()...")
+    print("Skipping test of scrape_teams_from_participants_website() and Team.scrape_players()...")
 
 
 if test_scrape_stats or test_scrape_teams_stats or test_full:
@@ -46,19 +50,21 @@ if test_scrape_stats or test_scrape_teams_stats or test_full:
             teams_tnr = teams_toor
         else:
             teams_tnr = testTeams
-        teams_tnr = scrape_stats(teams_tnr)
+        for the_team in testTeams:
+            for the_player in the_team.players:
+                the_player.scrape_stats(teams_tnr)
     except:
         print("Error in scrape_stats")
     else:
-        print("scrape_stats() successfull. Check output:\n")
-        for theTeam in teams_tnr:
-            print("Team-Name = " + theTeam.name)
-            for thePlayer in theTeam.players:
-                print("   Player-Name = " + thePlayer.name)
-                print("      MMR_1v1 = " + thePlayer.mmr_1v1)
-                print("      MMR_2v2 = " + thePlayer.mmr_2v2)
-                print("      MMR_3v3s = " + thePlayer.mmr_3v3s)
-                print("      MMR_3v3 = " + thePlayer.mmr_3v3)
+        print("Player.scrape_stats() successfull. Check output:\n")
+        for the_team in teams_tnr:
+            print("Team-Name = " + the_team.name)
+            for the_player in the_team.players:
+                print("   Player-Name = " + the_player.name)
+                print("      MMR_1v1 = " + the_player.mmr_1v1)
+                print("      MMR_2v2 = " + the_player.mmr_2v2)
+                print("      MMR_3v3s = " + the_player.mmr_3v3s)
+                print("      MMR_3v3 = " + the_player.mmr_3v3)
             print()
 else:
     print("Skipping test of scrape_stats()...")
