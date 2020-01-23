@@ -3,8 +3,9 @@ from scrapetoor import *
 test_scrape_teams = False
 test_scrape_stats = False
 test_csv_export = False
+test_csv_import = True
 test_scrape_teams_stats = False
-test_full = True
+test_full = False
 
 # Create 2 test teams with players
 testTeams = []
@@ -75,7 +76,6 @@ t = 0
 while t < 2:
     p = 0
     while p < 3:
-        print("t=" + str(t) + ", p=" + str(p))
         testTeams[t].players[p].mmr_1v1 = str((t+1)*100 + p + 1)
         testTeams[t].players[p].mmr_2v2 = str((t+1)*100 + p + 2)
         testTeams[t].players[p].mmr_3v3s = str((t+1)*100 + p + 3)
@@ -96,4 +96,9 @@ if test_csv_export or test_full:
     save_success = export_teams_to_csv(save_teams, csv_file_name, save_directory)
     print("Save successful?: " + str(save_success))
 else:
-    print("Skipping test of export_csv()...")
+    print("Skipping test of export_teams_to_csv()...")
+
+if test_csv_import:
+    import_teams_from_csv('C:/Users/pohl/Documents/Git/toornament_rlstats/CSV_Output/main_output_for_tests.csv')
+else:
+    print("Skipping test of import_teams_from_csv()...")

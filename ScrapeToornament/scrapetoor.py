@@ -210,5 +210,22 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
     return csv_success
 
 
-# def import_teams_from_csv(csv_file_path)
 # TODO: Add function that can re-create teams-list with players from CSV-file so web-scraping not necessary every time
+def import_teams_from_csv(csv_file_path):
+    with open(csv_file_path, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+
+        teams = []
+        row_nr = 1
+        for row in reader:
+            if row_nr < 10:
+                this_team_name = row[0]
+                if this_team_name is not last_team_name:
+                    print(this_team_name)
+                    team_url = row[1]
+                    new_team = Team(this_team_name, team_url)
+                    # TODO: add functions to create teams and so on
+                    teams.append(new_team)
+
+                last_team_name = this_team_name
+                row_nr = row_nr + 1
