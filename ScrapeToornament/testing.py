@@ -99,6 +99,26 @@ else:
     print("Skipping test of export_teams_to_csv()...")
 
 if test_csv_import:
-    import_teams_from_csv('C:/Users/pohl/Documents/Git/toornament_rlstats/CSV_Output/main_output_for_tests.csv')
+    dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    save_directory = dir_parent_path.replace('\\', '/') + '/CSV_Output/'
+    csv_file_name = "main_output_for_tests.csv"
+
+    teams = import_teams_from_csv(save_directory + csv_file_name)
+    for this_team in teams:
+        print(this_team.name)
+        for this_player in this_team.players:
+            if this_player.steam_id != '-':
+                id_type = 'Steam'
+                player_id = this_player.steam_id
+            else:
+                if this_player.xbox_id != '-':
+                    id_type = 'Xbox'
+                    player_id = this_player.xbox_id
+                else:
+                    if this_player.psn_id != '-':
+                        id_type = 'PS'
+                        player_id = this_player.psn_id
+
+            print(this_player.name + ', ' + id_type + '-ID: ' + player_id)
 else:
     print("Skipping test of import_teams_from_csv()...")

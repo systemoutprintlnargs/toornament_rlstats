@@ -186,7 +186,6 @@ def scrape_teams_from_participants_website(participants_url):
 # def panda_format(teams):
 
 
-# TODO: format teams-object into csv-file and export
 def export_teams_to_csv(all_teams, csv_file_name, save_directory):
     print("Exporting to CSV...")
     csv_success = True
@@ -201,7 +200,7 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
             try:
                 writer.writerow([team.name] + [team.url] + [player.name] + [player.url] +
                                 [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
-            except UnicodeEncodeError:
+            except UnicodeEncodeError:  # Some players enter Chinese symbols etc...
                 print("Export error in player with URL " + player.url)
                 writer.writerow(['ERROR'] + ['ERROR'] + ['ERROR'] + [player.url] +
                                 ['ERROR'] + ['ERROR'] + ['ERROR'] + ['ERROR'])
@@ -210,22 +209,39 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
     return csv_success
 
 
-# TODO: Add function that can re-create teams-list with players from CSV-file so web-scraping not necessary every time
 def import_teams_from_csv(csv_file_path):
+    # Open CSV-File:
     with open(csv_file_path, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='|')
 
         teams = []
-        row_nr = 1
+        row_nr = 0
+        last_team_name = ""
         for row in reader:
-            if row_nr < 10:
+            if row_nr > 0:  # First row contains column titles
                 this_team_name = row[0]
-                if this_team_name is not last_team_name:
-                    print(this_team_name)
+                if this_team_name != last_team_name:
+                    # Get team info
+                    # print("Importing team " + this_team_name)
                     team_url = row[1]
                     new_team = Team(this_team_name, team_url)
-                    # TODO: add functions to create teams and so on
                     teams.append(new_team)
+                # Get player-info
+                new_player = Player(row[2], new_team, '-', '-', '-', '-')
+                # ID is stored in URL...
+                id_type = row[3].split('/')[len(row[3].split('/')) - 2]
+                player_id = row[3].split('/')[len(row[3].split('/')) - 1]
+                if id_type == 'steam':
+                    new_player.steam_id = player_id
+                else:
+                    if id_type == 'xbox':
+                        new_player.xbox_id = player_id
+                    else:
+                        if id_type == 'ps':
+                            new_player.psn_id = player_id
+                # print('   Importing ' + new_player.name + ' with id_type ' + id_type + ' and ID ' + player_id)
+                new_team.players.append(new_player)
 
                 last_team_name = this_team_name
-                row_nr = row_nr + 1
+            row_nr = row_nr + 1
+    return teams
