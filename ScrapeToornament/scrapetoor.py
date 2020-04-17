@@ -158,7 +158,6 @@ class Player:
 # Returns teams (an array of <Team> objects with Team-Name and URL)
 def scrape_teams_from_participants_website(participants_url):
     # Extract data about Teams from website
-    # TODO: Better to check for 404...
     teams = []
     page = 0
     while True:
@@ -169,7 +168,12 @@ def scrape_teams_from_participants_website(participants_url):
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
 
-        errorsoup = soup.find('li', attrs={'class': 'arrow next disabled'})
+        # Check if there are more pages
+        errorsoup = soup.find('ul', attrs={'class': 'pagination-nav'})  # No navigation = only one page
+        if errorsoup is None:
+            errorsoup = 1
+        else:
+            errorsoup = soup.find('li', attrs={'class': 'arrow next disabled'})  # No further pages
 
         for div in soup.findAll('div', attrs={'class': 'size-1-of-4'}):
             team_name = div.find('div', attrs={'class': 'name'})
