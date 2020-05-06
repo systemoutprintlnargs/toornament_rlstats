@@ -129,9 +129,9 @@ dmypy.json
 .pyre/
 
 # Pycharm stuff
-workspace.xml
-usage.statistics.xml
-tasks.xml
+*/.idea/workspace.xml
+*/.idea/usage.statistics.xml
+*/.idea/tasks.xml
 
 # Output files
 CSV_Output/*.csv
