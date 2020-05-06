@@ -9,7 +9,6 @@ import csv
 # Get directory path and chromedriver.exe
 dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver.exe'
-print(cd_path)
 driver = webdriver.Chrome(executable_path=cd_path)
 
 main_url_toor = "https://www.toornament.com"
@@ -186,6 +185,7 @@ def scrape_teams_from_participants_website(participants_url):
             break
     return teams
 
+
 # TODO: use panda to re-format data
 # def panda_format(teams):
 
@@ -206,8 +206,8 @@ def export_teams_to_csv(all_teams, csv_file_name, save_directory):
                                 [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
             except UnicodeEncodeError:  # Some players enter Chinese symbols etc...
                 print("Export error in player with URL " + player.url)
-                writer.writerow(['ERROR'] + ['ERROR'] + ['ERROR'] + [player.url] +
-                                ['ERROR'] + ['ERROR'] + ['ERROR'] + ['ERROR'])
+                writer.writerow([team.name] + [team.url] + ['NON-ASCII-ERROR'] + [player.url] +
+                                [player.mmr_1v1] + [player.mmr_2v2] + [player.mmr_3v3s] + [player.mmr_3v3])
     print("Successfully exported to CSV.")
     print("\n")
     return csv_success
