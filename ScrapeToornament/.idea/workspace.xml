@@ -2,12 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="05b15c5d-d26e-4a92-a3bd-bfc06a530fb9" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../CSV_Output/20200123_main_output.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../CSV_Output/20200123_main_output.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/ScrapeToornament.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ScrapeToornament.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../CSV_Output/20200123_main_output.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/scrapetoor.py" beforeDir="false" afterPath="$PROJECT_DIR$/scrapetoor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../_ExternalFiles/chromedriver.exe" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

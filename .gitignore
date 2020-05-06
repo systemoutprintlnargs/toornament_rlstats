@@ -128,7 +128,17 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# mystuff
+# Pycharm stuff
+workspace.xml
+usage.statistics.xml
+tasks.xml
+
+# Output files
+CSV_Output/*.csv
+CSV_Output/*.xlsx
+
+# Binaries
+*.exe
+
+# Test files
 garbage.py
-test_output.csv
-*main_output.csv
