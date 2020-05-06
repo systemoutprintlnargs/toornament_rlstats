@@ -16,6 +16,30 @@ trackernet_url = "https://rocketleague.tracker.network"
 
 
 # Classes
+class Tournament:
+    def __init__(self, name, url):
+        self.name = name
+        self.url = url
+        self.stages = []
+        self.teams = []
+
+    def set_teams(self, teams):
+        self.teams = teams
+
+    # Function to get all sub-tournaments in a tournament
+    def scrape_tournament_stages(self, stages_url):
+        # TODO: Add function to scrape stages for this tournament
+        driver.get(stages_url)
+        content = driver.page_source
+        soup = BeautifulSoup(content, features="html.parser")
+
+
+class Stage:
+    def __init__(self, name, url):
+        self.name = name
+        self.url = url
+        self.teams = []
+
 class Team:
     def __init__(self, name, url):
         self.name = name
