@@ -133,6 +133,9 @@ dmypy.json
 */.idea/usage.statistics.xml
 */.idea/tasks.xml
 
+# Spyder stuff
+.spyproject/*
+
 # Output files
 CSV_Output/*.csv
 CSV_Output/*.xlsx
