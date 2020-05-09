@@ -27,17 +27,33 @@ class Tournament:
         self.teams = teams
 
     # Function to get all sub-tournaments in a tournament
-    def scrape_tournament_stages(self, stages_url):
+    def scrape_tournament_stages(self):
         # TODO: Add function to scrape stages for this tournament
+        stages_url = self.url + '/stages/'
         driver.get(stages_url)
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
-
+        stages_soup = soup.find('div', attrs={'class': 'grid-flex mobile-vertical spacing-large'})
+        stages_soup = stages_soup.findAll('div', attrs={'class': 'size-1-of-3 tablet-size-1-of-2 mobile-size-full'})
+        
+        for div in stages_soup:
+            stage_url = div.find('a', href=True)['href'].text
+            stage_name = div.find('div', attrs={'class': 'title'})
+            stage_type = div.find('div', attrs={'class': 'item'})[0] # Does it work like this?
+            stage_nteams = div.find('div', attrs={'class': 'item'})[1] # Does it work like this?
+            
+            newstage = Stage(stage_name, stage_url)
+            newstage.type = stage_type
+            newstage.nteams = stage_nteams
+            self.stages.append(newstage)
+            # TODO: test this function up until here
 
 class Stage:
     def __init__(self, name, url):
         self.name = name
         self.url = url
+        self.type = []
+        self.nteams = []
         self.teams = []
 
 class Team:
