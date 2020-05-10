@@ -1,15 +1,27 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 # import pandas as pd
 import os
 # import sys
 # import time
 import csv
+import platform
 
 # Get directory path and chromedriver.exe
 dir_parent_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver.exe'
-driver = webdriver.Chrome(executable_path=cd_path)
+operating_system = platform.system()
+print('OS found: ' + operating_system)
+if operating_system == 'Windows':
+    cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=cd_path)
+elif operating_system == 'Linux':
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver'
+    driver = webdriver.Chrome(executable_path=cd_path,  chrome_options=chrome_options)
 
 main_url_toor = "https://www.toornament.com"
 trackernet_url = "https://rocketleague.tracker.network"
@@ -25,11 +37,12 @@ class Tournament:
 
     def set_teams(self, teams):
         self.teams = teams
-
+    
     # Function to get all sub-tournaments in a tournament
     def scrape_tournament_stages(self):
         # TODO: Add function to scrape stages for this tournament
-        stages_url = self.url + '/stages/'
+        stages_url = self.url + 'stages/'
+        print('Opening url ' + stages_url)
         driver.get(stages_url)
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
@@ -37,14 +50,37 @@ class Tournament:
         stages_soup = stages_soup.findAll('div', attrs={'class': 'size-1-of-3 tablet-size-1-of-2 mobile-size-full'})
         
         for div in stages_soup:
-            stage_url = div.find('a', href=True)['href'].text
-            stage_name = div.find('div', attrs={'class': 'title'})
-            stage_type = div.find('div', attrs={'class': 'item'})[0] # Does it work like this?
-            stage_nteams = div.find('div', attrs={'class': 'item'})[1] # Does it work like this?
-            
+            stage_url = div.find('a', href=True)['href']
+            print("stage_url = " + stage_url)
+            stage_name = div.find('div', attrs={'class': 'title'}).text
+            print("stage_name = " + stage_name)
+            stage_type = div.findAll('div', attrs={'class': 'item'})[0].text  # Does it work like this?
+            print("stage_type = " + stage_type)
+            teams_divs = div.findAll('div', attrs={'class': 'item'})[1].text  # Does it work like this?
+            print("teams_divs = " + teams_divs)
+            teams_stringpos = teams_divs.find('Teams')
+            divs_stringpos = teams_divs.find('Division')
+
+            # TODO: Problematisch wegen vielen Leerzeichen im String, unbekannte Länge der Teams-Nr.
+            # <div class="item">
+            #                     20 Teams |
+            #                     2 Divisions
+            #                 </div>
+            if teams_stringpos > -1:
+                stage_nteams = int(teams_divs[:(teams_stringpos-1)])
+            else:
+                stage_nteams = 0
+            if divs_stringpos > -1:
+                stage_ndivs = int(teams_divs[:(divs_stringpos-1)])
+            else:
+                stage_ndivs = 0
+            print('nteams = ' + str(stage_nteams))
+            print('ndivs = ' + str(stage_ndivs))
+
             newstage = Stage(stage_name, stage_url)
             newstage.type = stage_type
             newstage.nteams = stage_nteams
+            newstage.ndivisions = stage_ndivs
             self.stages.append(newstage)
             # TODO: test this function up until here
 
@@ -54,6 +90,7 @@ class Stage:
         self.url = url
         self.type = []
         self.nteams = []
+        self.ndivisions = []
         self.teams = []
 
 class Team:
@@ -193,6 +230,20 @@ class Player:
             self.mmr_3v3 = "-1"
 
 
+def scrape_tournament_info(tournament_url):
+    # Open Tournament-URL and extract website content
+    driver.get(tournament_url)
+    content = driver.page_source
+    soup = BeautifulSoup(content, features="html.parser")
+    
+    tournament_soup = soup.find('div', attrs={'class': 'tournament format-header'})
+    print('tournament_soup1 = ' + tournament_soup.text)
+    tournament_name = tournament_soup.find('div', attrs={'class': 'name'}).text
+    print('tournament_name = ' + tournament_name)
+    tournament = Tournament(tournament_name, tournament_url)
+    return tournament
+
+
 # Function to get team and player information from toornament.com
 # Returns teams (an array of <Team> objects with Team-Name and URL)
 def scrape_teams_from_participants_website(participants_url):
@@ -289,3 +340,8 @@ def import_teams_from_csv(csv_file_path):
                 last_team_name = this_team_name
             row_nr = row_nr + 1
     return teams
+
+
+def tear_down_webdriver():
+    if driver is not None:
+        driver.quit()

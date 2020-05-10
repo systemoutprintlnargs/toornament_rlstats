@@ -23,3 +23,5 @@ for the_team in teams_toor:
 
 # Export data to csv
 save_success = export_teams_to_csv(teams_toor, csv_file_name, save_directory)
+
+tear_down_webdriver()

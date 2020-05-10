@@ -1,11 +1,21 @@
 from scrapetoor import *
 
+test_scrape_stages = True
 test_scrape_teams = False
 test_scrape_stats = False
 test_csv_export = False
-test_csv_import = True
+test_csv_import = False
 test_scrape_teams_stats = False
 test_full = False
+
+# Test basic scrape tournament
+if test_scrape_stages or test_full:
+    tournament_url = "https://www.toornament.com/en_GB/tournaments/3356365864224243712/"
+    tournament = scrape_tournament_info(tournament_url)
+    print('tournament_name = ' + tournament.name)
+    print('tournament_url = ' + tournament.url)
+    tournament.scrape_tournament_stages()
+
 
 # Create 2 test teams with players
 testTeams = []
@@ -122,3 +132,5 @@ if test_csv_import:
             print(this_player.name + ', ' + id_type + '-ID: ' + player_id)
 else:
     print("Skipping test of import_teams_from_csv()...")
+
+tear_down_webdriver()
