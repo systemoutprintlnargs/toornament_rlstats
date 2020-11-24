@@ -132,6 +132,7 @@ dmypy.json
 */.idea/workspace.xml
 */.idea/usage.statistics.xml
 */.idea/tasks.xml
+.idea/misc.xml
 
 # Spyder stuff
 .spyproject/*
@@ -145,3 +146,7 @@ CSV_Output/*.xlsx
 
 # Test files
 garbage.py
+
+# _ExternalFiles
+_ExternalFiles/chromedriver
+_ExternalFiles/chromedriver.exe

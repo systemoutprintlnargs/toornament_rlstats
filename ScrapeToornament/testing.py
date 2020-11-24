@@ -12,9 +12,14 @@ test_full = False
 if test_scrape_stages or test_full:
     tournament_url = "https://www.toornament.com/en_GB/tournaments/3356365864224243712/"
     tournament = scrape_tournament_info(tournament_url)
-    print('tournament_name = ' + tournament.name)
-    print('tournament_url = ' + tournament.url)
+    tournament.teams = scrape_teams_from_participants_website(tournament_url + 'participants/')
     tournament.scrape_tournament_stages()
+    print('Scraped tournament ' + tournament.name)
+    print('Found stages:')
+    for s in tournament.stages:
+        print('   ' + s.name + ' with these teams:')
+        for t in s.teams:
+            print('      ' + t.name)
 
 
 # Create 2 test teams with players

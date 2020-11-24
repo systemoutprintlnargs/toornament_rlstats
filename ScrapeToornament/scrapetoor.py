@@ -17,7 +17,7 @@ if operating_system == 'Windows':
     driver = webdriver.Chrome(executable_path=cd_path)
 elif operating_system == 'Linux':
     chrome_options = Options()
-    chrome_options.add_argument('--headless')
+    #chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     cd_path = dir_parent_path.replace('\\', '/') + '/_ExternalFiles/chromedriver'
@@ -29,9 +29,20 @@ trackernet_url = "https://rocketleague.tracker.network"
 
 # Classes
 class Tournament:
-    def __init__(self, name, url):
-        self.name = name
-        self.url = url
+    def __init__(self, **kwargs):
+        # args -- tuple of anonymous arguments
+        # kwargs -- dictionary of named arguments
+        self.name = kwargs.get('name')
+        self.url = kwargs.get('url')
+        self.game = kwargs.get('game')
+        self.organizer = kwargs.get('organizer')
+        self.location = kwargs.get('location')
+        self.startdate = kwargs.get('startdate')
+        self.enddate = kwargs.get('enddate')
+        self.website = kwargs.get('website')
+        self.perc_played = kwargs.get('perc_played')
+        self.nteams = kwargs.get('nteams')
+
         self.stages = []
         self.teams = []
 
@@ -40,58 +51,109 @@ class Tournament:
     
     # Function to get all sub-tournaments in a tournament
     def scrape_tournament_stages(self):
-        # TODO: Add function to scrape stages for this tournament
         stages_url = self.url + 'stages/'
-        print('Opening url ' + stages_url)
         driver.get(stages_url)
         content = driver.page_source
         soup = BeautifulSoup(content, features="html.parser")
         stages_soup = soup.find('div', attrs={'class': 'grid-flex mobile-vertical spacing-large'})
         stages_soup = stages_soup.findAll('div', attrs={'class': 'size-1-of-3 tablet-size-1-of-2 mobile-size-full'})
-        
-        for div in stages_soup:
-            stage_url = div.find('a', href=True)['href']
-            print("stage_url = " + stage_url)
-            stage_name = div.find('div', attrs={'class': 'title'}).text
-            print("stage_name = " + stage_name)
-            stage_type = div.findAll('div', attrs={'class': 'item'})[0].text  # Does it work like this?
-            print("stage_type = " + stage_type)
-            teams_divs = div.findAll('div', attrs={'class': 'item'})[1].text  # Does it work like this?
-            print("teams_divs = " + teams_divs)
-            teams_stringpos = teams_divs.find('Teams')
-            divs_stringpos = teams_divs.find('Division')
 
-            # TODO: Problematisch wegen vielen Leerzeichen im String, unbekannte Länge der Teams-Nr.
-            # <div class="item">
-            #                     20 Teams |
-            #                     2 Divisions
-            #                 </div>
+        # Go through all stages and scrape their info
+        for div in stages_soup:
+            stage_url = main_url_toor + div.find('a', href=True)['href']
+            stage_name = div.find('div', attrs={'class': 'title'}).text
+            stage_type = div.findAll('div', attrs={'class': 'item'})[0].text
+
+            teams_divs = div.findAll('div', attrs={'class': 'item'})[1].text
+            # teams_divs is a bit weirdly formatted, needs some reformatting:
+            teams_divs = teams_divs.replace('\n', "").replace(" ", "")
+            teams_stringpos = teams_divs.find('Team')
+            divs_stringpos = teams_divs.find('Division')
             if teams_stringpos > -1:
-                stage_nteams = int(teams_divs[:(teams_stringpos-1)])
+                stage_nteams = int(teams_divs[:(teams_stringpos)])
             else:
                 stage_nteams = 0
             if divs_stringpos > -1:
-                stage_ndivs = int(teams_divs[:(divs_stringpos-1)])
+                stage_ndivs = int(teams_divs[(teams_stringpos + 6):(divs_stringpos)])
             else:
-                stage_ndivs = 0
-            print('nteams = ' + str(stage_nteams))
-            print('ndivs = ' + str(stage_ndivs))
+                stage_ndivs = 1
 
+            # Create new stage object and append to Tournament
             newstage = Stage(stage_name, stage_url)
+            newstage.tournament = self
             newstage.type = stage_type
             newstage.nteams = stage_nteams
             newstage.ndivisions = stage_ndivs
+            # TODO: Add divisions to stages
             self.stages.append(newstage)
-            # TODO: test this function up until here
+
+        for stg in self.stages:
+            stg.scrape_teams_in_stage()
+            print('Scraping done, found these teams in stage:')
+            for t in stg.teams:
+                print(t.name)
+
 
 class Stage:
     def __init__(self, name, url):
         self.name = name
         self.url = url
+        self.tournament = []
         self.type = []
         self.nteams = []
         self.ndivisions = []
         self.teams = []
+
+    def scrape_teams_in_stage(self):
+        print('Scraping teams in Stage ' + self.name)
+
+        # Open stage url
+        driver.get(self.url)
+        content = driver.page_source
+        soup = BeautifulSoup(content, features="html.parser")
+
+        if self.type == 'Double Elimination':
+            nodes_soup = soup.find('div', attrs={'class': 'bracket-nodes'})
+
+            # Go through nodes and find new teams -> add to list
+            team_names = []
+            for node in nodes_soup:
+                t1 = node.find('div', attrs={'class': 'opponent opponent-1'}).find('div', attrs={'class': 'name'}).text.strip()
+                t2 = node.find('div', attrs={'class': 'opponent opponent-2'}).find('div', attrs={'class': 'name'}).text.strip()
+                t1_found = False
+                t2_found = False
+                for t in team_names:
+                    if t == t1:
+                        t1_found = True
+                    if t == t2:
+                        t2_found = True
+                if not t1_found:
+                    team_names.append(t1)
+                if not t2_found:
+                    team_names.append(t2)
+
+            # List with unique team names is done, now find respective team objects
+            for tname in team_names:
+                for team in self.tournament.teams:
+                    if team.name == tname:
+                        self.teams.append(team)
+
+        if self.type == 'League':
+            # TODO: Set up divisions in stage
+            # TODO: Add teams to divisions
+
+
+class Division:
+    def __init__(self, name, stage):
+        self.name = name
+        self.stage = stage
+
+        self.teams = []
+        self.url = []
+
+    def scrape_teams_from_division_url(self):
+        # TODO: Scrape teams
+
 
 class Team:
     def __init__(self, name, url):
@@ -237,10 +299,22 @@ def scrape_tournament_info(tournament_url):
     soup = BeautifulSoup(content, features="html.parser")
     
     tournament_soup = soup.find('div', attrs={'class': 'tournament format-header'})
-    print('tournament_soup1 = ' + tournament_soup.text)
     tournament_name = tournament_soup.find('div', attrs={'class': 'name'}).text
-    print('tournament_name = ' + tournament_name)
-    tournament = Tournament(tournament_name, tournament_url)
+    platforms = []
+    for span in tournament_soup.find('div', attrs={'class': 'platform'}).findAll('span', attrs={'class': 'badge'}):
+        platforms.append(span.text)
+    game = tournament_soup.find('div', attrs={'class': 'discipline'}).text
+    organizer = tournament_soup.find('div', attrs={'class': 'organizer'}).find('span', attrs={'itemprop': 'name'}).text
+    location = tournament_soup.find('div', attrs={'class': 'location'}).text
+    startdate = tournament_soup.findAll('date-view')[0].text
+    enddate = tournament_soup.findAll('date-view')[1].text
+    website = tournament_soup.find('div', attrs={'class': 'website'}).text
+    perc_played = tournament_soup.find('span', attrs={'class': 'played'}).text
+    nteams = tournament_soup.find('div', attrs={'class': 'current'}).text
+
+    tournament = Tournament(name=tournament_name, url=tournament_url, game=game, organizer=organizer,
+                            location=location, startdate=startdate, enddate=enddate, website=website,
+                            perc_played=perc_played, nteams=nteams)
     return tournament
 
 
